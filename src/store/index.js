@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-//  Timer state — loaded synchronously at module init
+// Timer state — loaded synchronously at module init
 // We load this before the store is created so the first render already has
 // the correct restored values. No useEffect race condition.
 
@@ -56,6 +56,7 @@ function getInitialTimerState() {
       intent: intent || "",
       customDuration: customDuration || null,
       sessionColor: sessionColor || null,
+      tools: saved.tools || [],
     };
   } catch (_) {
     return {};
@@ -113,8 +114,9 @@ export const useTimerStore = create((set, get) => ({
   distractionShield: false,
 
   // Custom session options — survive reloads
-  customDuration: restoredTimer.customDuration || null, // null = use mode default
-  sessionColor: restoredTimer.sessionColor || null, // null = use mode color
+  customDuration: restoredTimer.customDuration || null,
+  sessionColor: restoredTimer.sessionColor || null,
+  tools: restoredTimer.tools || [],
 
   MODES: DEFAULT_MODES,
 
@@ -126,12 +128,14 @@ export const useTimerStore = create((set, get) => ({
       customDuration: null,
       sessionColor: null,
     }),
-  setCustomDuration: (d) => set({ customDuration: d }), // seconds or null
-  setSessionColor: (c) => set({ sessionColor: c }), // hex string or null
+  setCustomDuration: (d) => set({ customDuration: d }),
+  setSessionColor: (c) => set({ sessionColor: c }),
+  setTools: (t) => set({ tools: t }),
   restoreTimer: (s) => set(s),
   setStatus: (s) => set({ status: s }),
   setElapsed: (e) => set({ elapsed: e }),
   setIntent: (i) => set({ intent: i }),
+  clearIntent: () => set({ intent: "" }),
   setReflection: (r) => set({ reflection: r }),
   setDistractionShield: (v) => set({ distractionShield: v }),
   reset: () =>
@@ -142,10 +146,11 @@ export const useTimerStore = create((set, get) => ({
       reflection: "",
       customDuration: null,
       sessionColor: null,
+      tools: [],
     }),
 }));
 
-//  Journal Store (persisted)
+// Journal Store (persisted)
 export const useJournalStore = create(
   persist(
     (set) => ({
@@ -160,7 +165,7 @@ export const useJournalStore = create(
   ),
 );
 
-//  Streak Store (persisted)
+//Streak Store (persisted)
 export const useStreakStore = create(
   persist(
     (set, get) => ({
@@ -204,11 +209,11 @@ export const useStreakStore = create(
 export const useAccountabilityStore = create((set) => ({
   listenerCount: Math.floor(Math.random() * 200) + 50,
   recentActivity: [],
-  addActivity: (msg) =>
+  addActivity: (msg, own = false) =>
     set((s) => ({
-      recentActivity: [{ msg, id: Date.now() }, ...s.recentActivity].slice(
+      recentActivity: [{ msg, id: Date.now(), own }, ...s.recentActivity].slice(
         0,
-        5,
+        6,
       ),
     })),
   updateListenerCount: (n) => set({ listenerCount: n }),

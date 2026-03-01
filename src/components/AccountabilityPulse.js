@@ -13,10 +13,17 @@ const ActivityItem = memo(function ActivityItem({ item }) {
       className="flex items-center gap-2 py-1"
     >
       <span
-        className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"
-        style={{ boxShadow: "0 0 4px #4ade80" }}
+        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{
+          background: item.own ? "#67e8f9" : "#4ade80",
+          boxShadow: item.own ? "0 0 5px #67e8f9" : "0 0 4px #4ade80",
+        }}
       />
-      <p className="text-xs text-white/30 truncate">{item.msg}</p>
+      <p
+        className={`text-xs truncate ${item.own ? "text-white/70 font-medium" : "text-white/30"}`}
+      >
+        {item.msg}
+      </p>
     </motion.div>
   );
 });
@@ -50,10 +57,15 @@ export default function AccountabilityPulse() {
       {/* Activity feed */}
       <div className="min-h-[60px] space-y-0.5">
         <AnimatePresence initial={false}>
-          {recentActivity.slice(0, 3).map((item) => (
+          {recentActivity.slice(0, 4).map((item) => (
             <ActivityItem key={item.id} item={item} />
           ))}
         </AnimatePresence>
+        {recentActivity.length === 0 && (
+          <p className="text-white/15 text-xs font-mono">
+            Waiting for activity…
+          </p>
+        )}
       </div>
     </div>
   );

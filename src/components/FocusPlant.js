@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useStreakStore, useTimerStore } from "../store";
+import { useStreakStore, useTimerStore, useJournalStore } from "../store";
 
 const STAGES = [
   {
@@ -65,16 +65,15 @@ const WILTED_TITLE = "It's thirsty.";
 const WILTED_DESC =
   "Your streak broke and the plant can feel it. One session is all it takes to revive it.";
 
-function getStage(n) {
+function getStage(hours) {
   let s = STAGES[0];
   for (const stage of STAGES) {
-    if (n >= stage.min) s = stage;
+    if (hours >= stage.min) s = stage;
   }
   return s;
 }
 
 //  SVG plant shapes
-
 function Sway({ children, duration = 4, amount = 4, origin = "60px 116px" }) {
   return (
     <motion.g
@@ -435,7 +434,7 @@ function FlourishedPlant({ color, accent, glowing }) {
   );
 }
 
-//  Sparkle burst on session complete
+// Sparkle burst on session complete
 function Sparkles({ color, accent }) {
   return (
     <>
@@ -469,13 +468,22 @@ function Sparkles({ color, accent }) {
 
 // Main
 export default function FocusPlant() {
-  const { totalSessions, currentStreak } = useStreakStore();
+  const { entries } = useJournalStore();
+  const { currentStreak } = useStreakStore();
   const { status } = useTimerStore();
+
+  // Total focused hours from all journal entries
+  const totalSeconds = entries.reduce((sum, e) => sum + (e.duration || 0), 0);
+  const totalHours = totalSeconds / 3600;
+  const totalHoursDisplay =
+    totalHours < 1
+      ? `${Math.round(totalSeconds / 60)}m`
+      : `${totalHours.toFixed(1)}h`;
   const [showSparkle, setShowSparkle] = useState(false);
   const [prevStatus, setPrevStatus] = useState(status);
 
-  const stage = getStage(totalSessions);
-  const isWilted = totalSessions > 0 && currentStreak === 0;
+  const stage = getStage(totalHours);
+  const isWilted = totalSeconds > 0 && currentStreak === 0;
   const isActive = status === "running";
 
   const title = isWilted ? WILTED_TITLE : stage.title;
@@ -535,7 +543,7 @@ export default function FocusPlant() {
         </svg>
       </motion.div>
 
-      {/* no tooltip */}
+      {/* Always-visible descriptive text — no tooltip */}
       <motion.div
         key={title}
         initial={{ opacity: 0, y: 6 }}
@@ -549,9 +557,9 @@ export default function FocusPlant() {
         <p className="text-white/35 text-xs leading-relaxed font-light">
           {desc}
         </p>
-        {totalSessions > 0 && (
+        {totalSeconds > 0 && (
           <p className="text-white/15 text-xs font-mono">
-            {totalSessions} session{totalSessions !== 1 ? "s" : ""}
+            {totalHoursDisplay} focused
             {currentStreak > 0 && ` · ${currentStreak} day streak`}
           </p>
         )}

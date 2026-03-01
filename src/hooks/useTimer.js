@@ -3,7 +3,6 @@ import { useTimerStore, useAudioStore } from "../store";
 import { useTimerPersistence } from "./useTimerPersistence";
 import { clearTimerState } from "../store";
 
-// Module-level singleton worker
 let _worker = null;
 function getWorker() {
   if (!_worker)
@@ -22,6 +21,7 @@ export function useTimer() {
     customDuration,
     setStatus,
     setElapsed,
+    clearIntent,
   } = useTimerStore();
   const { isPlaying, setPlaying, setPausedForFocus } = useAudioStore();
 
@@ -30,7 +30,7 @@ export function useTimer() {
 
   const duration = customDuration || MODES[mode]?.duration || 50 * 60;
 
-  //  Boot worker on mount if store was restored as running
+  // Boot worker on mount if store was restored as running
   // Because the store loads synchronously from localStorage, `status` and
   // `elapsed` already have the right values on the very first render.
   const workerBootedRef = useRef(false);
@@ -71,7 +71,7 @@ export function useTimer() {
     return () => worker.removeEventListener("message", onMessage);
   }, [setElapsed, setStatus, isPlaying, setPlaying, setPausedForFocus]);
 
-  // Controls
+  //  Controls
   const start = useCallback(() => {
     getWorker().postMessage({
       type: "START",
@@ -94,6 +94,7 @@ export function useTimer() {
   const reset = useCallback(() => {
     getWorker().postMessage({ type: "RESET" });
     clearTimerState();
+    clearIntent();
     setElapsed(0);
     setStatus("idle");
   }, [setElapsed, setStatus]);

@@ -1,52 +1,109 @@
-import { useEffect } from "react";
-import { useAccountabilityStore } from "../store";
+import { useEffect, useRef } from "react";
+import { useAccountabilityStore, useTimerStore } from "../store";
 
-const ACTIVITY_MESSAGES = [
-  "Someone just started a Deep session",
-  "A listener joined from Tokyo",
-  "Someone just completed a Focus block",
-  "A new listener tuned in",
-  'Someone set their intent: "ship the feature"',
-  "A Deep session just ended — 90 min streak",
-  "A Deep session just ended — 50 min streak",
-  "A listener joined from Space",
-  "Someone just locked in 6hrs now",
-  "Someone is on their 3rd session today",
+// ── Dynamic message generators ────────────────────────────────────────────────
+const CITIES = [
+  "Tokyo",
+  "Lagos",
+  "London",
+  "São Paulo",
+  "Berlin",
+  "Nairobi",
+  "Seoul",
+  "Cairo",
+  "Toronto",
+  "Jakarta",
+  "Taiwan",
 ];
+const INTENTS = [
+  '"finishing the landing page"',
+  '"reading chapter 4"',
+  '"shipping the feature"',
+  '"debugging this thing"',
+  '"writing the essay"',
+  '"deep reading"',
+  '"studying for finals"',
+  '"building in public"',
+];
+const MODES = ["Deep Work", "Focus", "Drift"];
 
-/**
- * useAccountability
- * Simulates real-time social presence.
- * Architecture is designed so you can swap the setInterval + random logic
- * for a real WebSocket connection (e.g. socket.on('activity', addActivity))
- * without changing any component code.
- */
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateAmbientMessage() {
+  const type = rand(1, 8);
+  switch (type) {
+    case 1:
+      return `Someone in ${pick(CITIES)} just started a ${pick(MODES)} session`;
+    case 2:
+      return `A listener joined from ${pick(CITIES)}`;
+    case 3:
+      return `Someone just completed a ${rand(25, 90)}m session`;
+    case 4:
+      return `Someone set their intent: ${pick(INTENTS)}`;
+    case 5:
+      return `${rand(2, 8)} people are on their ${rand(2, 5)}th session today`;
+    case 6:
+      return `Someone is on a ${rand(3, 12)} day streak`;
+    case 7:
+      return `A ${pick(MODES)} session just ended in ${pick(CITIES)}`;
+    case 8:
+      return `${rand(3, 15)} people started sessions in the last hour`;
+    default:
+      return `Someone in ${pick(CITIES)} is locked in`;
+  }
+}
+
+const MODE_LABELS = { Deep: "Deep Work", Focus: "Focus", Drift: "Drift" };
+
 export function useAccountability() {
   const { listenerCount, recentActivity, addActivity, updateListenerCount } =
     useAccountabilityStore();
+  const { status, mode, intent } = useTimerStore();
+  const prevStatusRef = useRef(status);
 
+  // Your own session events
   useEffect(() => {
-    // Simulate listener count drift every 15s
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+
+    if (prev !== "running" && status === "running") {
+      const label = MODE_LABELS[mode] || mode;
+      const msg = intent?.trim()
+        ? `You started a ${label} session · "${intent.trim()}"`
+        : `You started a ${label} session`;
+      addActivity(msg, true);
+    }
+    if (prev === "running" && status === "reflection") {
+      addActivity(`You completed a ${MODE_LABELS[mode] || mode} session`, true);
+    }
+    if (prev === "running" && status === "paused") {
+      addActivity("You paused your session", true);
+    }
+    if (prev === "paused" && status === "running") {
+      addActivity("You resumed your session", true);
+    }
+  }, [status, mode, intent, addActivity]);
+
+  // ── Simulated ambient activity ────────────────────────────────────────────
+  useEffect(() => {
     const countTimer = setInterval(() => {
-      updateListenerCount(
-        Math.max(20, listenerCount + Math.floor(Math.random() * 11) - 5),
-      );
+      updateListenerCount(Math.max(20, listenerCount + rand(-5, 5)));
     }, 15000);
 
-    // Simulate activity pulse every 8–20s
     let activityTimer;
-    const scheduleActivity = () => {
-      const delay = 8000 + Math.random() * 12000;
+    const scheduleNext = () => {
+      const delay = rand(10000, 22000);
       activityTimer = setTimeout(() => {
-        const msg =
-          ACTIVITY_MESSAGES[
-            Math.floor(Math.random() * ACTIVITY_MESSAGES.length)
-          ];
-        addActivity(msg);
-        scheduleActivity();
+        addActivity(generateAmbientMessage(), false);
+        scheduleNext();
       }, delay);
     };
-    scheduleActivity();
+    scheduleNext();
 
     return () => {
       clearInterval(countTimer);

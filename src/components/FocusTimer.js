@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Square,
   Crosshair,
@@ -8,13 +8,13 @@ import {
   Pause,
   RotateCcw,
   Check,
+  ExternalLink,
 } from "lucide-react";
 import { useTimerStore, useAudioStore } from "../store";
 import { useTimer } from "../hooks/useTimer";
 import { useJournal } from "../hooks/useJournal";
 import { formatTime } from "../utils/time";
 
-// ── Duration options ───────────────────────────────────────────────────────────
 const DURATION_OPTIONS = [
   { label: "25m", secs: 25 * 60 },
   { label: "50m", secs: 50 * 60 },
@@ -27,7 +27,6 @@ const DURATION_OPTIONS = [
   { label: "6h", secs: 360 * 60 },
 ];
 
-// ── Color palette ──────────────────────────────────────────────────────────────
 const COLOR_OPTIONS = [
   { label: "Cyan", hex: "#67e8f9" },
   { label: "Purple", hex: "#c084fc" },
@@ -47,7 +46,6 @@ const MODE_ICONS = {
   Drift: <Diamond size={15} strokeWidth={1.5} />,
 };
 
-// Standard durations per mode — used to detect "non-standard" sessions
 const MODE_DEFAULTS = { Deep: 90 * 60, Focus: 50 * 60, Drift: 25 * 60 };
 
 function CircularProgress({ progress, color, size = 220 }) {
@@ -94,6 +92,7 @@ export default function FocusTimer() {
     MODES,
     customDuration,
     sessionColor,
+    tools,
     setMode,
     setStatus,
     setDistractionShield,
@@ -101,23 +100,22 @@ export default function FocusTimer() {
     setSessionColor,
   } = useTimerStore();
   const { setPausedForFocus } = useAudioStore();
-  const { pause, resume, reset, duration } = useTimer();
+  const { start, pause, resume, reset, duration } = useTimer();
   const { saveSession } = useJournal();
 
-  // Resolve active color: sessionColor > mode default
   const modeConfig = MODES[mode];
   const activeColor = sessionColor || modeConfig.color;
-
-  // Is this a non-standard duration?
   const isCustomDuration =
     customDuration !== null && customDuration !== MODE_DEFAULTS[mode];
-
   const progress = elapsed / duration;
   const remaining = Math.max(0, duration - elapsed);
   const isIdle = status === "idle";
   const isRunning = status === "running";
   const isPaused = status === "paused";
   const isActive = isRunning || isPaused;
+
+  // Read tools directly from store to always get latest
+  const liveTools = useTimerStore((s) => s.tools) || [];
 
   useEffect(() => {
     setDistractionShield(mode === "Deep" && status === "running");
@@ -148,19 +146,18 @@ export default function FocusTimer() {
     setPausedForFocus,
   ]);
 
-  // Selected duration pill value
   const selectedDuration = customDuration || modeConfig.duration;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 space-y-5">
-      {/*  Mode selector (idle only) */}
+      {/* Mode selector */}
       {isIdle && (
         <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
           {Object.entries(MODES).map(([key, cfg]) => (
             <button
               key={key}
               onClick={() => setMode(key)}
-              className={`flex-1 py-2 rounded-lg text-xs font-mono transition-all duration-200 flex flex-col items-center gap-1 ${
+              className={`flex-1 py-2 rounded-lg text-xs font-mono transition-all flex flex-col items-center gap-1 ${
                 mode === key
                   ? "bg-white/10 text-white"
                   : "text-white/40 hover:text-white/60"
@@ -182,7 +179,7 @@ export default function FocusTimer() {
         </div>
       )}
 
-      {/*  Timer face  */}
+      {/* Timer face */}
       <div className="flex flex-col items-center">
         <div
           className="relative flex items-center justify-center"
@@ -194,7 +191,7 @@ export default function FocusTimer() {
           />
           <div className="text-center space-y-1 z-10">
             <div
-              className="font-mono text-5xl tracking-tighter tabular-nums transition-colors duration-500"
+              className="font-mono text-5xl tracking-tighter tabular-nums"
               style={{
                 color: activeColor,
                 textShadow: `0 0 30px ${activeColor}55`,
@@ -213,16 +210,17 @@ export default function FocusTimer() {
             </p>
             {isActive && isCustomDuration && (
               <p className="text-white/20 text-[10px] font-mono">
-                {customDuration / 60 >= 60
-                  ? `${customDuration / 3600}h custom`
-                  : `${customDuration / 60}m custom`}
+                {customDuration >= 3600
+                  ? `${customDuration / 3600}h`
+                  : `${customDuration / 60}m`}{" "}
+                custom
               </p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Duration picker (idle only) */}
+      {/* Duration picker */}
       {isIdle && (
         <div className="space-y-2">
           <p className="text-xs font-mono uppercase tracking-widest text-white/25">
@@ -231,7 +229,6 @@ export default function FocusTimer() {
           <div className="flex gap-1.5 flex-wrap">
             {DURATION_OPTIONS.map(({ label, secs }) => {
               const isSelected = selectedDuration === secs;
-              const isDefault = secs === modeConfig.duration;
               return (
                 <motion.button
                   key={secs}
@@ -241,7 +238,7 @@ export default function FocusTimer() {
                       secs === modeConfig.duration ? null : secs,
                     )
                   }
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-mono transition-all relative"
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-mono transition-all"
                   style={{
                     background: isSelected
                       ? `${activeColor}22`
@@ -253,9 +250,6 @@ export default function FocusTimer() {
                   }}
                 >
                   {label}
-                  {isDefault && !isSelected && (
-                    <span className="ml-1 text-white/20 text-[9px]">·</span>
-                  )}
                 </motion.button>
               );
             })}
@@ -263,24 +257,19 @@ export default function FocusTimer() {
         </div>
       )}
 
-      {/*  Color picker (idle only) */}
+      {/* Color picker */}
       {isIdle && (
         <div className="space-y-2">
           <p className="text-xs font-mono uppercase tracking-widest text-white/25">
             Session color
           </p>
           <div className="flex gap-2 flex-wrap">
-            {/* Mode default — no custom color */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setSessionColor(null)}
-              title="Use mode default"
-              className="w-7 h-7 rounded-full border-2 transition-all flex items-center justify-center"
+              className="w-7 h-7 rounded-full border-2 flex items-center justify-center"
               style={{
-                background: `conic-gradient(${COLOR_OPTIONS.map(
-                  (c, i) =>
-                    `${c.hex} ${(i / COLOR_OPTIONS.length) * 100}% ${((i + 1) / COLOR_OPTIONS.length) * 100}%`,
-                ).join(", ")})`,
+                background: `conic-gradient(${COLOR_OPTIONS.map((c, i) => `${c.hex} ${(i / COLOR_OPTIONS.length) * 100}% ${((i + 1) / COLOR_OPTIONS.length) * 100}%`).join(", ")})`,
                 borderColor: sessionColor === null ? "white" : "transparent",
                 opacity: sessionColor === null ? 1 : 0.5,
               }}
@@ -289,33 +278,32 @@ export default function FocusTimer() {
                 <Check size={11} className="text-white drop-shadow" />
               )}
             </motion.button>
-
             {COLOR_OPTIONS.map(({ hex, label }) => {
-              const isSelected = sessionColor === hex;
+              const sel = sessionColor === hex;
               return (
                 <motion.button
                   key={hex}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setSessionColor(isSelected ? null : hex)}
+                  onClick={() => setSessionColor(sel ? null : hex)}
                   title={label}
-                  className="w-7 h-7 rounded-full border-2 transition-all flex items-center justify-center"
+                  className="w-7 h-7 rounded-full border-2 flex items-center justify-center"
                   style={{
                     background: hex,
-                    borderColor: isSelected ? "white" : "transparent",
-                    boxShadow: isSelected ? `0 0 10px ${hex}88` : "none",
+                    borderColor: sel ? "white" : "transparent",
+                    boxShadow: sel ? `0 0 10px ${hex}88` : "none",
                   }}
                 >
-                  {isSelected && <Check size={11} className="text-black" />}
+                  {sel && <Check size={11} className="text-black" />}
                 </motion.button>
               );
             })}
           </div>
           {sessionColor && (
             <p className="text-white/20 text-xs font-mono">
-              Custom color active ·{" "}
+              Custom color ·{" "}
               <button
                 onClick={() => setSessionColor(null)}
-                className="text-white/30 hover:text-white/50 underline transition-colors"
+                className="text-white/30 hover:text-white/50 underline"
               >
                 reset
               </button>
@@ -324,24 +312,22 @@ export default function FocusTimer() {
         </div>
       )}
 
-      {/*  Controls */}
+      {/* Controls */}
       <div className="flex gap-2">
         {isIdle && (
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setStatus("ritual")}
-            className="flex-1 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
             style={{
               background: `${activeColor}22`,
               color: activeColor,
               border: `1px solid ${activeColor}44`,
             }}
           >
-            <Play size={15} />
-            Start Session
+            <Play size={15} /> Start Session
           </motion.button>
         )}
-
         {isRunning && (
           <>
             <motion.button
@@ -354,20 +340,18 @@ export default function FocusTimer() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleReset}
-              title="End session early"
               className="px-4 py-3 rounded-xl text-sm text-white/30 border border-white/10 hover:border-white/20 transition-colors"
             >
               <RotateCcw size={15} />
             </motion.button>
           </>
         )}
-
         {isPaused && (
           <>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={resume}
-              className="flex-[2] py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2"
+              className="flex-[2] py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
               style={{
                 background: `${activeColor}22`,
                 color: activeColor,
@@ -379,13 +363,51 @@ export default function FocusTimer() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleReset}
-              className="flex-1 py-3 rounded-xl text-sm text-white/40 border border-white/10 hover:border-white/20 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl text-sm text-white/40 border border-white/10 flex items-center justify-center gap-2"
             >
               <RotateCcw size={14} /> End
             </motion.button>
           </>
         )}
       </div>
+
+      {/* ── Tools tray ── */}
+      {liveTools.length > 0 && (
+        <div className="space-y-2 border-t border-white/5 pt-4">
+          <p className="text-xs font-mono uppercase tracking-widest text-white/40">
+            Your tools
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {liveTools.map((tool) => {
+              const name = tool?.name || String(tool);
+              const href = tool?.url || `https://${name.toLowerCase()}.com`;
+              return (
+                <a
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono"
+                  style={{
+                    background: `${activeColor}18`,
+                    border: `1px solid ${activeColor}40`,
+                    color: activeColor,
+                    textDecoration: "none",
+                  }}
+                >
+                  {tool?.clean && (
+                    <span className="text-[9px] uppercase opacity-50 mr-1">
+                      clean
+                    </span>
+                  )}
+                  {name}
+                  <ExternalLink size={10} className="opacity-50" />
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {isActive && (
         <p className="text-center text-xs font-mono text-white/20">
