@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+
+    <!-- ── Primary identity — Chrome reads these for the install dialog ── -->
+    <title>focus.radio</title>
+    <meta name="application-name" content="focus.radio" />
+    <meta
+      name="description"
+      content="A minimalist lo-fi focus radio with timers, ambient sound mixing, and session journaling for deep work."
+    />
+    <meta name="theme-color" content="#08080f" />
+
+    <!-- ── PWA manifest ──────────────────────────────────────────────── -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- ── Favicon ───────────────────────────────────────────────────── -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◈</text></svg>"
+    />
+
+    <!-- ── Apple / iOS PWA ───────────────────────────────────────────── -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="focus.radio" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/icon-192.png" />
+
+    <!-- ── Windows / Android ────────────────────────────────────────── -->
+    <meta name="msapplication-TileColor" content="#08080f" />
+    <meta
+      name="msapplication-TileImage"
+      content="%PUBLIC_URL%/icons/icon-144.png"
+    />
+    <meta
+      name="msapplication-tooltip"
+      content="focus.radio — lo-fi deep work"
+    />
+
+    <!-- ── Open Graph ────────────────────────────────────────────────── -->
+    <meta property="og:title" content="focus.radio" />
+    <meta
+      property="og:description"
+      content="Lo-fi focus radio for deep work sessions."
+    />
+    <meta property="og:type" content="website" />
+
+    <!-- ── Fonts ─────────────────────────────────────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@300;400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run focus.radio.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
