@@ -1,70 +1,86 @@
-# Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+# focus.radio
 
-In the project directory, you can run:
+A quiet place to do your best work. Lo-fi radio, ambient sounds, focus timers, a work journal, and a plant that grows with your consistency.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Radio + Ambient**
+- 24/7 lo-fi stream with offline drone fallback
+- Independent ambient mixer — rain, café, static, hearth
+- Ambient plays without the radio. Radio plays without ambient. Both have their own controls.
 
-### `npm test`
+**Focus Timer**
+- Three modes: Deep (90m), Focus (50m), Drift (25m)
+- Custom durations from 25 minutes up to 6 hours
+- Custom session colors — change the ring, gradient and page accent
+- Breathing ritual before every session
+- Sessions survive page reloads — timer keeps running even if you close and reopen the tab
+- Distraction shield for Deep Work mode (fullscreen lockout)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Work Journal**
+- Every session logged with intent and reflection
+- Partial sessions saved automatically if you end early
+- Grouped by day with total time per day
+- Session color carried through to journal entries
 
-### `npm run build`
+**Work Stats**
+- Time tracked per project
+- "Locked in" badge for projects with 3+ sessions or 2h+ logged
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**Focus Plant**
+- A tiny SVG plant that lives at the bottom of the Focus tab
+- Grows through 7 stages based on total sessions completed
+- Glows while a session is running, sparkles when one completes
+- Wilts if your streak breaks. One session revives it.
+- Your consistency is its water.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Games**
+- Snake and Dino Run for break time
+- 5-minute stretch reminder
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+**PWA**
+- Installable on Android, iOS and desktop
+- Offline ambient audio (Web Audio API, no network needed)
+- OS media controls via Media Session API
+- Install prompt shown once, 5 seconds after first visit
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Stack
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- React 18
+- Zustand
+- Framer Motion
+- Tailwind CSS
+- Lucide React
+- Web Audio API
+- Web Workers (timer runs off main thread)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Running locally
 
-## Learn More
+```bash
+npm install
+npm start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+To test PWA features (install prompt, service worker, offline):
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm run build
+npx serve -s build
+```
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Notes
 
-### Analyzing the Bundle Size
+The ambient sounds are generated entirely via Web Audio — noise buffers and oscillators. No audio files, no network required for ambience.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The timer state is saved to localStorage on every tick. If you reload mid-session, the app calculates how many seconds passed while the tab was closed and picks up from there.
